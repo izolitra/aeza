@@ -1,5 +1,5 @@
-import { OverviewPage as OverviewPageView } from "@/src/page-modules/overview";
+import { ComponentShowcasePage } from "@/src/page-modules/overview";
 
-export default function OverviewPage() {
-  return <OverviewPageView />;
+export default function DashboardOverviewRoute() {
+  return <ComponentShowcasePage />;
 }

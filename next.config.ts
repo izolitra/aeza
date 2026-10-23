@@ -1,7 +1,9 @@
-import path from "node:path";
 import type { NextConfig } from "next";
 
-const projectRoot = path.resolve(__dirname);
+// The app and its node_modules live in `frontend`. Use the directory from
+// which `npm run dev` is executed so Turbopack does not resolve dependencies
+// from the parent repository directory on Windows.
+const projectRoot = process.cwd();
 
 const nextConfig: NextConfig = {
   turbopack: {

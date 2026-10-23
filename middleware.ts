@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { defaultLocale, locales } from "@/src/shared/config";
 
 const PUBLIC_FILE = /\.[^/]+$/;
+const AVAILABLE_LOCALIZED_PATHS = new Set(["", "/login", "/overview", "/profile"]);
 
 function isPublicFile(pathname: string): boolean {
   return PUBLIC_FILE.test(pathname);
@@ -28,8 +29,27 @@ function isIgnoredPath(pathname: string): boolean {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (isIgnoredPath(pathname) || hasLocalePrefix(pathname)) {
+  if (isIgnoredPath(pathname)) {
     return NextResponse.next();
+  }
+
+  if (hasLocalePrefix(pathname)) {
+    const locale = locales.find(
+      (candidate) =>
+        pathname === `/${candidate}` || pathname.startsWith(`/${candidate}/`)
+    );
+    const localizedPath = locale
+      ? pathname.slice(`/${locale}`.length).replace(/\/$/, "")
+      : "";
+
+    if (AVAILABLE_LOCALIZED_PATHS.has(localizedPath)) {
+      return NextResponse.next();
+    }
+
+    const url = request.nextUrl.clone();
+    url.pathname = `/${locale}/overview`;
+    url.search = "";
+    return NextResponse.redirect(url);
   }
 
   const url = request.nextUrl.clone();

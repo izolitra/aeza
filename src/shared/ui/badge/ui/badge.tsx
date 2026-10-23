@@ -5,31 +5,33 @@ export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
   variant?: "default" | "success" | "warning" | "danger";
 }
 
-const variantClasses: Record<NonNullable<BadgeProps["variant"]>, string> = {
-  default:
-    "border border-[color:var(--status-neutral-border)] bg-[color:var(--status-neutral-bg)] text-[color:var(--status-neutral-fg)]",
-  success:
-    "border border-[color:var(--status-positive-border)] bg-[color:var(--status-positive-bg)] text-[color:var(--status-positive-fg)]",
-  warning:
-    "border border-[color:var(--status-warning-border)] bg-[color:var(--status-warning-bg)] text-[color:var(--status-warning-fg)]",
-  danger:
-    "border border-[color:var(--status-danger-border)] bg-[color:var(--status-danger-bg)] text-[color:var(--status-danger-fg)]",
+const variantDotClasses: Record<NonNullable<BadgeProps["variant"]>, string> = {
+  default: "bg-[#a3a3a3]",
+  success: "bg-[#22c55e]",
+  warning: "bg-[#f59e0b]",
+  danger: "bg-[#ef4444]",
 };
 
 export function Badge({
   className,
   variant = "default",
+  children,
   ...props
 }: BadgeProps) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium",
-        variantClasses[variant],
+        "inline-flex items-center gap-1.5 text-[20px] font-medium leading-normal text-white",
         className
       )}
       {...props}
-    />
+    >
+      <span
+        aria-hidden="true"
+        className={cn("h-[9px] w-[9px] shrink-0 rounded-full", variantDotClasses[variant])}
+      />
+      <span>{children}</span>
+    </span>
   );
 }
 

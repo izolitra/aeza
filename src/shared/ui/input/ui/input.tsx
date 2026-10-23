@@ -12,18 +12,18 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 const sizeClasses: Record<NonNullable<InputProps["inputSize"]>, string> = {
-  sm: "h-12 px-4 pt-6 pb-2 text-sm",
-  md: "h-14 px-4 pt-6 pb-2 text-sm",
-  lg: "h-14 px-4 pt-6 pb-2 text-base",
+  sm: "min-h-[56px] h-full px-0 pt-[26px] pb-2 text-lg leading-6",
+  md: "min-h-[56px] h-full px-0 pt-[26px] pb-2 text-lg leading-6",
+  lg: "min-h-[56px] h-full px-0 pt-[26px] pb-2 text-lg leading-6",
 };
 
 const labelPositionClasses: Record<
   NonNullable<InputProps["inputSize"]>,
   string
 > = {
-  sm: "left-4 top-4 text-sm",
-  md: "left-4 top-4 text-sm",
-  lg: "left-4 top-4 text-base",
+  sm: "left-0 right-0 top-[6px]",
+  md: "left-0 right-0 top-[6px]",
+  lg: "left-0 right-0 top-[6px]",
 };
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
@@ -51,7 +51,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
 
   return (
     <div className={cn("w-full", containerClassName)}>
-      <div className="relative">
+      <div className="rounded-[16px] bg-[rgb(37,37,37)] px-4 py-0">
+        <div className="relative">
         <input
           ref={ref}
           id={inputId}
@@ -60,19 +61,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
           aria-describedby={describedBy}
           placeholder=" "
           className={cn(
-            "peer w-full rounded-md border bg-[var(--input-background)] outline-none transition-all duration-200",
-            "text-[var(--foreground)] placeholder:text-transparent",
+            "peer relative flex w-full flex-auto min-w-0 self-stretch box-border items-center gap-2 rounded-none border-0 border-none bg-none bg-[rgb(37,37,37)] m-0 text-[#bbbbbb] outline-none shadow-none transition-[border-color,background-color,color] duration-200 hover:text-[rgb(102,102,102)] [--ui-kit-input-background:#252525]",
+            "placeholder:[font-family:inherit] placeholder:[font-style:inherit] placeholder:[font-variant:inherit] placeholder:[font-weight:inherit] placeholder:[font-stretch:inherit] placeholder:[line-height:inherit] placeholder:text-lg placeholder:text-ellipsis placeholder:text-inherit",
+            label && "placeholder:text-transparent focus:placeholder:text-inherit",
             "disabled:cursor-not-allowed disabled:opacity-50",
-            error
-              ? "border-[var(--status-danger-border)] focus:border-[var(--status-danger-border)] focus:bg-[var(--input-background-focus)] focus:shadow-[0_0_0_1px_var(--status-danger-border),0_0_0_2px_rgba(153,27,27,0.08)]"
-              : [
-                  "border-[var(--input-border)]",
-                  "hover:border-[var(--input-border-hover)]",
-                  "hover:bg-[var(--input-background-hover)]",
-                  "focus:border-[var(--ring)]",
-                  "focus:bg-[var(--input-background-focus)]",
-                  "focus:shadow-[0_0_0_1px_var(--ring),0_0_0_2px_rgba(113,113,122,0.08)]",
-                ].join(" "),
+            error && "focus:shadow-[0_0_0_1px_var(--status-danger-border),0_0_0_2px_rgba(153,27,27,0.08)]",
             sizeClasses[inputSize],
             className
           )}
@@ -83,20 +76,15 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
           <label
             htmlFor={inputId}
             className={cn(
-              "pointer-events-none absolute z-10 origin-[0] bg-transparent px-0 transition-all duration-150",
-              "text-[#8a8a8f]",
+              "pointer-events-none absolute z-10 left-0 right-0 origin-[0] translate-y-0 overflow-hidden whitespace-nowrap text-ellipsis bg-transparent px-0 text-xs leading-[1.5] text-[#666] transition-[top,transform,font-size,color] duration-200",
               labelPositionClasses[inputSize],
-              "-translate-y-3 scale-90",
-              "peer-placeholder-shown:translate-y-0 peer-placeholder-shown:scale-100",
-              "peer-focus:-translate-y-3 peer-focus:scale-90",
-              "peer-[&:not(:placeholder-shown)]:-translate-y-3",
-              "peer-[&:not(:placeholder-shown)]:scale-90",
-              error && "peer-focus:text-[var(--status-danger-fg)]"
+              "peer-[&:placeholder-shown:not(:focus)]:top-4 peer-[&:placeholder-shown:not(:focus)]:text-lg peer-[&:placeholder-shown:not(:focus)]:text-[#8a8a8f]",
             )}
           >
             {label}
           </label>
         ) : null}
+        </div>
       </div>
 
       {error ? (

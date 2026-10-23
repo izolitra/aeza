@@ -1,0 +1,100 @@
+{
+  "app": {
+    "name": "DoroheDoro Dashboard",
+    "metadata": {
+      "title": "DoroheDoro Dashboard",
+      "description": "Добротный дашборд для инфраструктуры, сессий и операционного контроля."
+    },
+    "loading": "Загрузка...",
+    "notFound": {
+      "title": "404",
+      "description": "Страница не найдена."
+    },
+    "error": {
+      "title": "Что-то пошло не так",
+      "description": "Произошла непредвиденная ошибка.",
+      "retry": "Попробовать снова"
+    }
+  },
+  "common": {
+    "dashboard": "Панель",
+    "close": "Закрыть",
+    "open": "Открыть",
+    "loadingButton": "Загрузка...",
+    "signedIn": "Вход выполнен",
+    "sessionActive": "Сессия активна"
+  },
+  "select": {
+    "placeholder": "Выберите значение",
+    "emptyTitle": "Ничего не найдено",
+    "emptyDescription": "Нет доступных вариантов для выбора."
+  },
+  "auth": {
+    "entry": {
+      "checkingSession": "Проверяем сессию...",
+      "redirectingAuthenticated": "Открываем дашборд...",
+      "redirectingUnauthenticated": "Перенаправляем на страницу входа..."
+    },
+    "guard": {
+      "checkingSession": "Проверяем сессию...",
+      "redirectingToLogin": "Перенаправляем на страницу входа..."
+    },
+    "login": {
+      "title": "Авторизация",
+      "localeLabel": "Язык",
+      "localeOptions": {
+        "ru": "Русский",
+        "en": "English"
+      },
+      "identifierLabel": "Логин или email",
+      "passwordLabel": "Пароль",
+      "continue": "Продолжить",
+      "submit": "Войти",
+      "back": "Назад",
+      "checkingSession": "Проверяем сессию...",
+      "errors": {
+        "identifierRequired": "Введите логин или email.",
+        "passwordRequired": "Введите пароль.",
+        "loginUnavailable": "Функция входа недоступна. Проверьте useAuth.",
+        "invalidCredentials": "Не удалось войти. Проверьте логин и пароль."
+      },
+      "footerTeam": "Fishing Team",
+      "footerProduct": "Логовизор аéза"
+    },
+    "logout": {
+      "full": "выйти",
+      "compact": "выйти"
+    }
+  },
+  "navigation": {
+    "eyebrow": "Панель управления",
+    "title": "Консоль инфраструктуры",
+    "expandSidebar": "Развернуть боковую панель",
+    "collapseSidebar": "Свернуть боковую панель",
+    "profile": {
+      "label": "профиль",
+      "description": "Текущий аккаунт и настройки сессии"
+    }
+  },
+  "profile": {
+    "title": "Профиль",
+    "description": "Локальный профиль для демонстрационного режима.",
+    "editTitle": "редактирование профиля",
+    "editDescription": "Изменения сохраняются локально в mock-сессии.",
+    "displayNameLabel": "отображаемое имя",
+    "save": "сохранить изменения",
+    "success": "Профиль успешно обновлен.",
+    "fallbackError": "Не удалось обновить профиль.",
+    "currentAccountTitle": "Текущий аккаунт",
+    "currentAccountDescription": "Используются локальные mock-данные пользователя.",
+    "fields": {
+      "email": "email",
+      "login": "логин",
+      "displayName": "отображаемое имя"
+    },
+    "validation": {
+      "displayNameMin": "Отображаемое имя должно содержать минимум 2 символа",
+      "displayNameMax": "Отображаемое имя должно быть не длиннее 80 символов"
+    }
+  }
+}

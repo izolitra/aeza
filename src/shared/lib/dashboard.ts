@@ -1,104 +1,40 @@
-import {
-  alertStatusMeta,
-  deploymentStatusMeta,
-  healthMeta,
-  hostStatusMeta,
-  severityMeta,
-} from "@/src/shared/constants/dashboard";
-import type {
-  Alert,
-  AlertStatus,
-  DeploymentJob,
-  DeploymentStatus,
-  HealthState,
-  Host,
-  HostStatus,
-  Severity,
-} from "@/src/shared/types/dashboard";
+import { getSiteCopy } from "@/src/shared/lib/i18n/site-copy";
 
-export function getHostStatusMeta(status: HostStatus) {
-  return hostStatusMeta[status];
-}
+const MINUTE_MS = 60 * 1000;
+const HOUR_MS = 60 * MINUTE_MS;
+const DAY_MS = 24 * HOUR_MS;
+const WEEK_MS = 7 * DAY_MS;
 
-export function getDeploymentStatusMeta(status: DeploymentStatus) {
-  return deploymentStatusMeta[status];
-}
+export function formatRelativeLabel(
+  value: string | Date | null | undefined,
+  locale: string
+): string {
+  const resolvedLocale = locale === "ru" ? "ru" : "en";
 
-export function getAlertStatusMeta(status: AlertStatus) {
-  return alertStatusMeta[status];
-}
+  if (!value) {
+    return getSiteCopy(resolvedLocale).common.na;
+  }
 
-export function getSeverityMeta(severity: Severity) {
-  return severityMeta[severity];
-}
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return typeof value === "string" ? value : getSiteCopy(resolvedLocale).common.na;
+  }
 
-export function getHealthMeta(health: HealthState) {
-  return healthMeta[health];
-}
+  const deltaMs = date.getTime() - Date.now();
+  const absoluteDeltaMs = Math.abs(deltaMs);
+  const formatter = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
 
-export function formatRelativeLabel(isoDate: string) {
-  const date = new Date(isoDate);
-  return new Intl.DateTimeFormat("ru-RU", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-}
+  if (absoluteDeltaMs < HOUR_MS) {
+    return formatter.format(Math.round(deltaMs / MINUTE_MS), "minute");
+  }
 
-export function formatPercent(value: number) {
-  return `${Math.round(value)}%`;
-}
+  if (absoluteDeltaMs < DAY_MS) {
+    return formatter.format(Math.round(deltaMs / HOUR_MS), "hour");
+  }
 
-export function formatCompactNumber(value: number) {
-  return new Intl.NumberFormat("ru-RU", {
-    notation: "compact",
-    maximumFractionDigits: 1,
-  }).format(value);
-}
+  if (absoluteDeltaMs < WEEK_MS) {
+    return formatter.format(Math.round(deltaMs / DAY_MS), "day");
+  }
 
-export function countHostsByStatus(hosts: Host[]) {
-  return hosts.reduce(
-    (acc, host) => {
-      acc[host.status] += 1;
-      return acc;
-    },
-    {
-      online: 0,
-      offline: 0,
-      degraded: 0,
-      enrolling: 0,
-    }
-  );
-}
-
-export function countAlertsByStatus(alerts: Alert[]) {
-  return alerts.reduce(
-    (acc, alert) => {
-      acc[alert.status] += 1;
-      return acc;
-    },
-    {
-      active: 0,
-      acknowledged: 0,
-      resolved: 0,
-      muted: 0,
-    }
-  );
-}
-
-export function countJobsByStatus(jobs: DeploymentJob[]) {
-  return jobs.reduce(
-    (acc, job) => {
-      acc[job.status] += 1;
-      return acc;
-    },
-    {
-      pending: 0,
-      running: 0,
-      success: 0,
-      failed: 0,
-      canceled: 0,
-    }
-  );
+  return date.toLocaleString(locale);
 }

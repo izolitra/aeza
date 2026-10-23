@@ -1,3 +1,5 @@
+import { createApiClient } from "@/src/shared/lib/api";
+
 const CSRF_COOKIE_NAME = "csrf_token";
 
 let csrfTokenCache: string | null = null;
@@ -40,3 +42,18 @@ export function clearCsrfToken(): void {
 }
 
 export { CSRF_COOKIE_NAME };
+
+export async function fetchCsrfToken(baseUrl?: string): Promise<string> {
+  const payload = await createApiClient({
+    baseUrl,
+    credentials: "include",
+  }).get<{ csrfToken?: string }>("/auth/csrf");
+  const token = payload.csrfToken?.trim();
+
+  if (!token) {
+    throw new Error("Edge API did not return a CSRF token");
+  }
+
+  setCsrfToken(token);
+  return token;
+}

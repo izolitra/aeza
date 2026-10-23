@@ -1,0 +1,100 @@
+{
+  "app": {
+    "name": "DoroheDoro Dashboard",
+    "metadata": {
+      "title": "DoroheDoro Dashboard",
+      "description": "A solid dashboard for infrastructure, sessions, and operational control."
+    },
+    "loading": "Loading...",
+    "notFound": {
+      "title": "404",
+      "description": "The page could not be found."
+    },
+    "error": {
+      "title": "Something went wrong",
+      "description": "An unexpected error occurred.",
+      "retry": "Try again"
+    }
+  },
+  "common": {
+    "dashboard": "Dashboard",
+    "close": "Close",
+    "open": "Open",
+    "loadingButton": "Loading...",
+    "signedIn": "Signed in",
+    "sessionActive": "Session active"
+  },
+  "select": {
+    "placeholder": "Select a value",
+    "emptyTitle": "Nothing found",
+    "emptyDescription": "There are no options to select."
+  },
+  "auth": {
+    "entry": {
+      "checkingSession": "Checking your session...",
+      "redirectingAuthenticated": "Opening your dashboard...",
+      "redirectingUnauthenticated": "Redirecting to login..."
+    },
+    "guard": {
+      "checkingSession": "Checking your session...",
+      "redirectingToLogin": "Redirecting to login..."
+    },
+    "login": {
+      "title": "Sign in",
+      "localeLabel": "Language",
+      "localeOptions": {
+        "ru": "Русский",
+        "en": "English"
+      },
+      "identifierLabel": "Login or email",
+      "passwordLabel": "Password",
+      "continue": "Continue",
+      "submit": "Sign in",
+      "back": "Back",
+      "checkingSession": "Checking your session...",
+      "errors": {
+        "identifierRequired": "Enter your login or email.",
+        "passwordRequired": "Enter your password.",
+        "loginUnavailable": "Login is unavailable. Check useAuth.",
+        "invalidCredentials": "Could not sign in. Check your login and password."
+      },
+      "footerTeam": "Fishing Team",
+      "footerProduct": "Logovisor aéza"
+    },
+    "logout": {
+      "full": "sign out",
+      "compact": "Out"
+    }
+  },
+  "navigation": {
+    "eyebrow": "Control panel",
+    "title": "Infrastructure console",
+    "expandSidebar": "Expand sidebar",
+    "collapseSidebar": "Collapse sidebar",
+    "profile": {
+      "label": "Profile",
+      "description": "Current account and session settings"
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "description": "Local profile for demonstration mode.",
+    "editTitle": "edit profile",
+    "editDescription": "Changes are saved locally in the mock session.",
+    "displayNameLabel": "display name",
+    "save": "save changes",
+    "success": "Profile updated successfully.",
+    "fallbackError": "Unable to update profile.",
+    "currentAccountTitle": "Current account",
+    "currentAccountDescription": "Local mock user data is used.",
+    "fields": {
+      "email": "email",
+      "login": "login",
+      "displayName": "display name"
+    },
+    "validation": {
+      "displayNameMin": "Display name must contain at least 2 characters",
+      "displayNameMax": "Display name must be 80 characters or fewer"
+    }
+  }
+}

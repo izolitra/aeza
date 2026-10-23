@@ -6,14 +6,6 @@ import {
   useEffect,
   useState,
 } from "react";
-import {
-  getCurrentUser,
-  isUnauthorizedError,
-  login as loginRequest,
-  logout as logoutRequest,
-  subscribeToUnauthorized,
-  updateProfile as updateProfileRequest,
-} from "@/src/shared/lib/auth";
 import type {
   AuthUser,
   LoginInput,
@@ -38,96 +30,122 @@ type AuthProviderProps = {
   children: ReactNode;
 };
 
+const AUTH_STORAGE_KEY = "mock-auth-session";
+
+function normalizeIdentifier(identifier: string) {
+  return identifier.trim();
+}
+
+function buildMockUser(identifier: string): AuthUser {
+  const normalizedIdentifier = normalizeIdentifier(identifier);
+  const normalizedLogin = normalizedIdentifier || "operator";
+  const email = normalizedLogin.includes("@")
+    ? normalizedLogin
+    : `${normalizedLogin}@local.dev`;
+
+  return {
+    id: normalizedLogin.toLowerCase(),
+    email,
+    login: normalizedLogin,
+    displayName: normalizedLogin,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+function readStoredUser(): AuthUser | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(AUTH_STORAGE_KEY);
+
+    if (!raw) {
+      return null;
+    }
+
+    return JSON.parse(raw) as AuthUser;
+  } catch (error) {
+    console.error("Failed to read mock auth session", error);
+    return null;
+  }
+}
+
+function persistUser(user: AuthUser | null) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  if (!user) {
+    window.localStorage.removeItem(AUTH_STORAGE_KEY);
+    return;
+  }
+
+  window.localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+}
+
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [status, setStatus] = useState<AuthStatus>("loading");
 
   useEffect(() => {
-    let isMounted = true;
-
-    async function loadCurrentUser() {
-      try {
-        const session = await getCurrentUser();
-
-        if (!isMounted) {
-          return;
-        }
-
-        setUser(session.user);
-        setStatus("authenticated");
-      } catch (error) {
-        if (!isMounted) {
-          return;
-        }
-
-        if (!isUnauthorizedError(error)) {
-          console.error("Failed to load current user", error);
-        }
-
-        setUser(null);
-        setStatus("unauthenticated");
-      }
-    }
-
-    void loadCurrentUser();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    return subscribeToUnauthorized(() => {
-      setUser(null);
-      setStatus("unauthenticated");
-    });
+    const storedUser = readStoredUser();
+    setUser(storedUser);
+    setStatus(storedUser ? "authenticated" : "unauthenticated");
   }, []);
 
   async function login(input: LoginInput): Promise<AuthUser> {
-    const session = await loginRequest(input);
-    setUser(session.user);
+    const nextUser = buildMockUser(input.identifier);
+    persistUser(nextUser);
+    setUser(nextUser);
     setStatus("authenticated");
-    return session.user;
+    return nextUser;
   }
 
   async function logout(): Promise<void> {
-    try {
-      await logoutRequest();
-    } catch (error) {
-      if (!isUnauthorizedError(error)) {
-        console.error("Failed to logout", error);
-      }
-    } finally {
-      setUser(null);
-      setStatus("unauthenticated");
-    }
+    persistUser(null);
+    setUser(null);
+    setStatus("unauthenticated");
   }
 
   async function refreshUser(): Promise<AuthUser | null> {
-    setStatus("loading");
-
-    try {
-      const session = await getCurrentUser();
-      setUser(session.user);
-      setStatus("authenticated");
-      return session.user;
-    } catch (error) {
-      if (!isUnauthorizedError(error)) {
-        console.error("Failed to refresh current user", error);
-      }
-
-      setUser(null);
-      setStatus("unauthenticated");
-      return null;
-    }
+    const storedUser = readStoredUser();
+    setUser(storedUser);
+    setStatus(storedUser ? "authenticated" : "unauthenticated");
+    return storedUser;
   }
 
   async function updateProfile(input: UpdateProfileInput): Promise<AuthUser> {
-    const session = await updateProfileRequest(input);
-    setUser(session.user);
+    const currentUser = readStoredUser() ?? user ?? buildMockUser("operator");
+    const updatedUser = {
+      ...currentUser,
+      displayName: input.displayName.trim(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    persistUser(updatedUser);
+    setUser(updatedUser);
     setStatus("authenticated");
-    return session.user;
+    return updatedUser;
   }
+
+  useEffect(() => {
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key !== AUTH_STORAGE_KEY) {
+        return;
+      }
+
+      const storedUser = readStoredUser();
+      setUser(storedUser);
+      setStatus(storedUser ? "authenticated" : "unauthenticated");
+    };
+
+    window.addEventListener("storage", handleStorage);
+
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+    };
+  }, []);
 
   return (
     <AuthContext.Provider

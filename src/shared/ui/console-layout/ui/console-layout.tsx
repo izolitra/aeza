@@ -13,11 +13,14 @@ export function ConsolePage({
   ...props
 }: ConsolePageProps) {
   return (
-    <main
-      className={cn("flex w-full min-w-0 flex-col overflow-x-clip", className)}
+    <div
+      className={cn(
+        "flex w-full min-w-0 flex-col overflow-x-clip px-3 py-6",
+        className
+      )}
       {...props}
     >
       {children}
-    </main>
+    </div>
   );
 }

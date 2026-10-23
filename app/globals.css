@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0a0a;
+  --background: #000;
   --foreground: #ededed;
   --muted-foreground: #a1a1aa;
   --card-foreground: #fafafa;
-  --surface: #111111;
+  --surface: #131313;
   --surface-elevated: #171717;
   --surface-subtle: rgba(255, 255, 255, 0.025);
   --surface-muted: rgba(255, 255, 255, 0.04);
@@ -30,6 +30,7 @@
   --button-secondary-bg-hover: #27272a;
   --button-ghost-fg: #d4d4d8;
   --button-ghost-bg-hover: #18181b;
+  --balance-action-bg: #ff7a00;
 
   --status-neutral-bg: #18181b;
   --status-neutral-border: #27272a;

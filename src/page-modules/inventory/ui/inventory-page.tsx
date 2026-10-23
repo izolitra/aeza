@@ -1,205 +1,295 @@
 "use client";
 
-import { useState } from "react";
-import { hosts } from "@/src/mocks/data/dashboard";
-import { formatPercent, formatRelativeLabel } from "@/src/shared/lib/dashboard";
-import { cn } from "@/src/shared/lib/cn";
+import { useEffect, useState } from "react";
+import { useI18n } from "@/src/shared/lib/i18n";
+import { formatRelativeLabel } from "@/src/shared/lib/dashboard";
 import {
-  Button,
-  ConsolePage,
-  HealthBadge,
-  KeyValueList,
-  StatusBadge,
+  listHostGroups,
+  listHosts,
+  type HostGroupItem,
+  type HostItem,
+} from "@/src/shared/lib/runtime-api";
+import {
+  Card,
+  EmptyState,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/src/shared/ui";
-import type { Host } from "@/src/shared/types/dashboard";
-import { HostsTable } from "@/src/widgets/hosts-table";
+import { PageHeader } from "@/src/widgets/dashboard-layout";
+import { ErrorCard, JsonValue, LoadingCard } from "@/src/page-modules/common/ui/runtime-state";
 
-const CONTENT_INSET = "px-4 md:px-6";
-const SECTION_Y = "py-5";
+const copyByLocale = {
+  en: {
+    loadError: "Failed to load inventory",
+    title: "Inventory",
+    description: "Live host inventory and host groups from control-plane.",
+    loading: "Loading inventory...",
+    hosts: {
+      title: "Hosts",
+      columns: {
+        hostname: "Hostname",
+        ip: "IP",
+        remoteUser: "Remote user",
+        updated: "Updated",
+      },
+      emptyTitle: "No hosts",
+      emptyDescription:
+        "Create hosts through WEB or the API to populate inventory.",
+    },
+    groups: {
+      title: "Host groups",
+      columns: {
+        name: "Name",
+        description: "Description",
+        members: "Members",
+        updated: "Updated",
+      },
+      emptyTitle: "No host groups",
+      emptyDescription:
+        "Create host groups to target deployments by inventory slice.",
+    },
+    inspector: {
+      title: "Host inspector",
+      createdPrefix: "Created",
+      emptyTitle: "No host selected",
+      emptyDescription:
+        "Pick a host from the table to inspect its labels and access metadata.",
+    },
+  },
+  ru: {
+    loadError: "Не удалось загрузить inventory",
+    title: "Инвентарь",
+    description: "Живой инвентарь хостов и групп хостов из control-plane.",
+    loading: "Загрузка инвентаря...",
+    hosts: {
+      title: "Хосты",
+      columns: {
+        hostname: "Hostname",
+        ip: "IP",
+        remoteUser: "Пользователь",
+        updated: "Обновлено",
+      },
+      emptyTitle: "Хостов нет",
+      emptyDescription:
+        "Создайте хосты через WEB или API, чтобы заполнить инвентарь.",
+    },
+    groups: {
+      title: "Группы хостов",
+      columns: {
+        name: "Имя",
+        description: "Описание",
+        members: "Участники",
+        updated: "Обновлено",
+      },
+      emptyTitle: "Групп хостов нет",
+      emptyDescription:
+        "Создайте группы хостов, чтобы таргетировать раскатки по срезам инвентаря.",
+    },
+    inspector: {
+      title: "Инспектор хоста",
+      createdPrefix: "Создан",
+      emptyTitle: "Хост не выбран",
+      emptyDescription:
+        "Выберите хост в таблице, чтобы посмотреть его labels и access metadata.",
+    },
+  },
+} as const;
 
-export function InventoryPage() {
-  const [selectedHost, setSelectedHost] = useState<Host | undefined>(hosts[0]);
+export function InventoryPage({ embedded = false }: { embedded?: boolean } = {}) {
+  const { dictionary, locale } = useI18n();
+  const copy = copyByLocale[locale];
+  const [hosts, setHosts] = useState<HostItem[]>([]);
+  const [hostGroups, setHostGroups] = useState<HostGroupItem[]>([]);
+  const [selectedHostId, setSelectedHostId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function load() {
+      setLoading(true);
+      setError(null);
+      try {
+        const [hostsResponse, groupsResponse] = await Promise.all([
+          listHosts(),
+          listHostGroups(),
+        ]);
+        if (cancelled) {
+          return;
+        }
+        setHosts(hostsResponse.items);
+        setHostGroups(groupsResponse.items);
+        setSelectedHostId((current) => current ?? hostsResponse.items[0]?.host_id ?? null);
+      } catch (loadError) {
+        if (!cancelled) {
+          setError(
+            loadError instanceof Error ? loadError.message : copy.loadError
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [copy.loadError]);
+
+  const selectedHost = hosts.find((item) => item.host_id === selectedHostId) ?? null;
 
   return (
-    <ConsolePage>
-      <div className="min-w-0">
-        <header
-          className={cn(
-            CONTENT_INSET,
-            "border-b border-[color:var(--border)] pb-5 pt-4 md:pb-6 md:pt-16"
-          )}
-        >
-          <nav aria-label="Breadcrumb">
-            <ol className="flex flex-wrap items-center gap-2 text-xs uppercase tracking-[0.16em] text-[color:var(--muted-foreground)]">
-              <li className="flex items-center gap-2">
-                <span>Панель</span>
-                <span className="text-[color:var(--border-strong)]">/</span>
-              </li>
-              <li className="text-[color:var(--foreground)]">Инвентарь</li>
-            </ol>
-          </nav>
+    <div className={embedded ? "space-y-4" : "space-y-6"}>
+      {!embedded ? (
+        <PageHeader
+          title={copy.title}
+          description={copy.description}
+          breadcrumbs={[
+            { label: dictionary.common.dashboard, href: "#" },
+            { label: copy.title },
+          ]}
+        />
+      ) : null}
 
-          <div className="mt-4 flex min-w-0 flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div className="min-w-0 max-w-4xl space-y-2">
-              <h1 className="text-[28px] font-semibold tracking-tight text-[color:var(--foreground)]">
-                Инвентарь
-              </h1>
-              <p className="text-sm leading-6 text-[color:var(--muted-foreground)]">
-                Table-first экран для управляемых хостов, фильтрации и анализа операционного
-                состояния.
-              </p>
-            </div>
+      {loading ? <LoadingCard label={copy.loading} /> : null}
+      {!loading && error ? <ErrorCard message={error} /> : null}
 
-            <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-              <Button type="button" variant="outline">
-                Добавить набор фильтров
-              </Button>
-            </div>
+      {!loading && !error ? (
+        <section className="grid gap-4 xl:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+          <div className="space-y-4">
+            <Card>
+              <div className="space-y-3">
+                <h2 className="text-base font-semibold text-[color:var(--foreground)]">
+                  {copy.hosts.title}
+                </h2>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{copy.hosts.columns.hostname}</TableHead>
+                      <TableHead>{copy.hosts.columns.ip}</TableHead>
+                      <TableHead>{copy.hosts.columns.remoteUser}</TableHead>
+                      <TableHead>{copy.hosts.columns.updated}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {hosts.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={4}>
+                          <EmptyState
+                            variant="flush"
+                            title={copy.hosts.emptyTitle}
+                            description={copy.hosts.emptyDescription}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      hosts.map((host) => (
+                        <TableRow
+                          key={host.host_id}
+                          className={
+                            host.host_id === selectedHostId
+                              ? "bg-[color:rgba(56,189,248,0.08)]"
+                              : undefined
+                          }
+                          onClick={() => setSelectedHostId(host.host_id)}
+                        >
+                          <TableCell className="font-medium text-[color:var(--foreground)]">
+                            {host.hostname}
+                          </TableCell>
+                          <TableCell>{host.ip}:{host.ssh_port}</TableCell>
+                          <TableCell>{host.remote_user}</TableCell>
+                          <TableCell>{formatRelativeLabel(host.updated_at, locale)}</TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </Card>
+
+            <Card>
+              <div className="space-y-3">
+                <h2 className="text-base font-semibold text-[color:var(--foreground)]">
+                  {copy.groups.title}
+                </h2>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{copy.groups.columns.name}</TableHead>
+                      <TableHead>{copy.groups.columns.description}</TableHead>
+                      <TableHead>{copy.groups.columns.members}</TableHead>
+                      <TableHead>{copy.groups.columns.updated}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {hostGroups.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={4}>
+                          <EmptyState
+                            variant="flush"
+                            title={copy.groups.emptyTitle}
+                            description={copy.groups.emptyDescription}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      hostGroups.map((group) => (
+                        <TableRow key={group.host_group_id}>
+                          <TableCell className="font-medium text-[color:var(--foreground)]">
+                            {group.name}
+                          </TableCell>
+                          <TableCell>{group.description || "—"}</TableCell>
+                          <TableCell>{group.members.length}</TableCell>
+                          <TableCell>{formatRelativeLabel(group.updated_at, locale)}</TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </Card>
           </div>
-        </header>
 
-        <div className="grid min-w-0 xl:grid-cols-[minmax(0,1fr)_420px]">
-          <main className="min-w-0">
-            <section className="min-w-0">
-              <HostsTable
-                hosts={hosts}
-                selectedHostId={selectedHost?.id}
-                onSelectHost={setSelectedHost}
-              />
-            </section>
-          </main>
-
-          <aside className="min-w-0 border-t border-[color:var(--border)] xl:border-l xl:border-t-0">
-            {selectedHost ? (
-              <>
-                <section
-                  className={cn(
-                    CONTENT_INSET,
-                    SECTION_Y,
-                    "border-b border-[color:var(--border)]"
-                  )}
-                >
-                  <div className="space-y-3">
-                    <div className="space-y-1">
-                      <h2 className="text-base font-semibold text-[color:var(--foreground)]">
-                        {selectedHost.name}
-                      </h2>
-                      <p className="text-sm text-[color:var(--muted-foreground)]">
-                        {selectedHost.cluster} · {selectedHost.os}
-                      </p>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2">
-                      <StatusBadge status={selectedHost.status} />
-                      <HealthBadge health={selectedHost.health} />
-                    </div>
-                  </div>
-                </section>
-
-                <section
-                  className={cn(
-                    CONTENT_INSET,
-                    SECTION_Y,
-                    "border-b border-[color:var(--border)]"
-                  )}
-                >
-                  <div className="mb-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--muted-foreground)]">
-                      Контекст
+          <Card>
+            <div className="space-y-3">
+                <h2 className="text-base font-semibold text-[color:var(--foreground)]">
+                  {copy.inspector.title}
+                </h2>
+              {selectedHost ? (
+                <>
+                  <div className="rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] p-3">
+                    <p className="text-lg font-semibold text-[color:var(--foreground)]">
+                      {selectedHost.hostname}
+                    </p>
+                    <p className="mt-1 text-sm text-[color:var(--muted-foreground)]">
+                      {selectedHost.ip}:{selectedHost.ssh_port} via {selectedHost.remote_user}
+                    </p>
+                    <p className="mt-2 text-xs uppercase tracking-[0.12em] text-[color:var(--muted-foreground)]">
+                      {copy.inspector.createdPrefix}{" "}
+                      {formatRelativeLabel(selectedHost.created_at, locale)}
                     </p>
                   </div>
-
-                  <KeyValueList
-                    items={[
-                      { label: "Окружение", value: selectedHost.environment.toUpperCase() },
-                      { label: "Провайдер", value: selectedHost.provider },
-                      { label: "Регион", value: selectedHost.region },
-                      { label: "Политики", value: selectedHost.policyCount },
-                    ]}
-                  />
-                </section>
-
-                <section
-                  className={cn(
-                    CONTENT_INSET,
-                    SECTION_Y,
-                    "border-b border-[color:var(--border)]"
-                  )}
-                >
-                  <div className="mb-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--muted-foreground)]">
-                      Нагрузка
-                    </p>
-                  </div>
-
-                  <KeyValueList
-                    items={[
-                      { label: "IP-адрес", value: selectedHost.ipAddress },
-                      { label: "Загрузка CPU", value: formatPercent(selectedHost.cpuLoad) },
-                      {
-                        label: "Использование памяти",
-                        value: formatPercent(selectedHost.memoryUsage),
-                      },
-                      {
-                        label: "Последний сигнал",
-                        value: formatRelativeLabel(selectedHost.lastSeenAt),
-                      },
-                    ]}
-                  />
-                </section>
-
-                <section className={cn(CONTENT_INSET, SECTION_Y)}>
-                  <div className="mb-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--muted-foreground)]">
-                      Теги и связи
-                    </p>
-                  </div>
-
-                  <KeyValueList
-                    items={[
-                      { label: "Теги", value: selectedHost.tags.join(", ") },
-                      { label: "Кластер", value: selectedHost.cluster },
-                      { label: "Платформа", value: selectedHost.os },
-                    ]}
-                  />
-                </section>
-              </>
-            ) : (
-              <>
-                <section
-                  className={cn(
-                    CONTENT_INSET,
-                    SECTION_Y,
-                    "border-b border-[color:var(--border)]"
-                  )}
-                >
-                  <div className="space-y-1">
-                    <h2 className="text-base font-semibold text-[color:var(--foreground)]">
-                      Детали хоста
-                    </h2>
-                    <p className="text-sm text-[color:var(--muted-foreground)]">
-                      Выберите хост в таблице, чтобы открыть инспектор.
-                    </p>
-                  </div>
-                </section>
-
-                <section className={cn(CONTENT_INSET, SECTION_Y)}>
-                  <div className="mb-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--muted-foreground)]">
-                      Состояние
-                    </p>
-                  </div>
-
-                  <p className="text-sm leading-6 text-[color:var(--muted-foreground)]">
-                    Правая колонка показывает операционный контекст, сигналы и нагрузку выбранного
-                    узла без перехода на отдельный экран.
-                  </p>
-                </section>
-              </>
-            )}
-          </aside>
-        </div>
-      </div>
-    </ConsolePage>
+                  <JsonValue value={selectedHost.labels} />
+                </>
+              ) : (
+                <EmptyState
+                  variant="flush"
+                  title={copy.inspector.emptyTitle}
+                  description={copy.inspector.emptyDescription}
+                />
+              )}
+            </div>
+          </Card>
+        </section>
+      ) : null}
+    </div>
   );
 }

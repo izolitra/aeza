@@ -1,6 +1,7 @@
 import { createApiClient } from "@/src/shared/lib/api";
 import { ApiError } from "@/src/shared/lib/api/client";
-import { clearCsrfToken, getCsrfToken, setCsrfToken } from "./csrf";
+import { clearCsrfToken, fetchCsrfToken, getCsrfToken, setCsrfToken } from "./csrf";
+import { getLoginErrorMessage, normalizeLoginError } from "./errors";
 import { emitUnauthorized } from "./events";
 import type {
   LoginInput,
@@ -9,7 +10,7 @@ import type {
 } from "./types";
 
 const authApiClient = createApiClient({
-  baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
+  baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api/edge",
   credentials: "include",
   getCsrfToken,
   onUnauthorized: () => {
@@ -17,6 +18,21 @@ const authApiClient = createApiClient({
     emitUnauthorized();
   },
 });
+
+
+async function ensureCsrfToken(): Promise<string> {
+  const existingToken = getCsrfToken();
+  if (existingToken) {
+    return existingToken;
+  }
+
+  try {
+    return await fetchCsrfToken(process.env.NEXT_PUBLIC_API_BASE_URL ?? "/api/edge");
+  } catch (error) {
+    clearCsrfToken();
+    throw normalizeLoginError(error, "csrf_init");
+  }
+}
 
 export function isUnauthorizedError(error: unknown): boolean {
   return (
@@ -27,14 +43,24 @@ export function isUnauthorizedError(error: unknown): boolean {
 }
 
 export async function login(input: LoginInput): Promise<SessionPayload> {
-  const response = await authApiClient.post<SessionPayload>("/auth/login", {
-    identifier: input.identifier,
-    email: input.identifier,
-    login: input.identifier,
-    password: input.password,
-  });
-  setCsrfToken(response.csrfToken);
-  return response;
+  await ensureCsrfToken();
+
+  try {
+    const response = await authApiClient.post<SessionPayload>("/auth/login", {
+      identifier: input.identifier,
+      email: input.identifier,
+      login: input.identifier,
+      password: input.password,
+    });
+    setCsrfToken(response.csrfToken);
+    return response;
+  } catch (error) {
+    const normalizedError = normalizeLoginError(error, "login");
+    if (normalizedError.kind === "csrf") {
+      clearCsrfToken();
+    }
+    throw normalizedError;
+  }
 }
 
 export async function logout(): Promise<void> {
@@ -60,3 +86,5 @@ export async function updateProfile(
   }
   return response;
 }
+
+export { getLoginErrorMessage };

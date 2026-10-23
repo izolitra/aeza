@@ -3,33 +3,31 @@
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { useAuth } from "@/src/features/auth";
+import { LogoutButton, useAuth } from "@/src/features/auth";
 import { createZodResolver } from "@/src/shared/lib/forms";
-import {
-  Button,
-  Card,
-  FormControl,
-  FormError,
-  FormField,
-  FormLabel,
-  Input,
-} from "@/src/shared/ui";
-import { PageHeader, Section } from "@/src/widgets/dashboard-layout";
+import { useI18n } from "@/src/shared/lib/i18n";
+import { Button, FormError, FormField, Input } from "@/src/shared/ui";
+import { DashboardPageLayout } from "@/src/widgets/dashboard-layout";
 
-const profileSchema = z.object({
-  displayName: z
-    .string()
-    .trim()
-    .min(2, "Display name must be at least 2 characters")
-    .max(80, "Display name must be 80 characters or fewer"),
-});
-
-type ProfileFormValues = z.infer<typeof profileSchema>;
+type ProfileFormValues = {
+  displayName: string;
+};
 
 export function ProfilePage() {
+  const { dictionary, locale } = useI18n();
+  const copy = dictionary.profile;
   const { user, updateProfile } = useAuth();
+
   const [formError, setFormError] = useState<string>();
   const [successMessage, setSuccessMessage] = useState<string>();
+
+  const profileSchema = z.object({
+    displayName: z
+      .string()
+      .trim()
+      .min(2, copy.validation.displayNameMin)
+      .max(80, copy.validation.displayNameMax),
+  });
 
   const form = useForm<ProfileFormValues>({
     defaultValues: {
@@ -61,93 +59,111 @@ export function ProfilePage() {
       form.reset({
         displayName: updatedUser.displayName,
       });
-      setSuccessMessage("Profile updated successfully.");
+      setSuccessMessage(copy.success);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Unable to update profile.";
+        error instanceof Error ? error.message : copy.fallbackError;
       setFormError(message);
     }
   });
 
   return (
-    <main className="space-y-6">
-      <PageHeader
-        title="Profile"
-        description="Update your visible profile data. This request uses the CSRF-aware fetch wrapper."
-      />
-
-      <Section className="border-t-0 py-0">
-        <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-          <Card className="space-y-5">
-            <div className="space-y-1">
-              <h2 className="text-lg font-semibold text-[color:var(--foreground)]">
-                Edit profile
-              </h2>
-              <p className="text-sm text-[color:var(--muted-foreground)]">
-                Saving sends a `PATCH /profile` request with the current CSRF token.
-              </p>
+    <div className="space-y-6">
+      <DashboardPageLayout
+        header={
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <span className="text-4xl font-semibold tracking-tight text-[color:var(--foreground)]">
+              {user.login}
+            </span>
+            <span className="text-4xl text-[#3d3d3d]">{user.email}</span>
+          </div>
+        }
+      >
+        <div className="py-8">
+          <dl>
+            <div className="grid grid-cols-1 gap-2 py-5 sm:grid-cols-[260px_minmax(0,1fr)] sm:items-center sm:gap-6">
+              <dt className="text-xl text-[color:var(--muted-foreground)]">
+                {copy.fields.displayName}
+              </dt>
+              <dd className="min-w-0 text-xl font-medium text-[color:var(--foreground)]">
+                {user.displayName}
+              </dd>
             </div>
 
-            <form className="space-y-5" onSubmit={onSubmit}>
-              <FormField>
-                <FormLabel htmlFor="displayName">Display name</FormLabel>
-                <FormControl hasError={Boolean(form.formState.errors.displayName)}>
-                  <Input id="displayName" {...form.register("displayName")} />
-                </FormControl>
-                <FormError message={form.formState.errors.displayName?.message} />
-              </FormField>
-
-              <FormError message={formError} />
-
-              {successMessage ? (
-                <p className="text-sm text-emerald-600">{successMessage}</p>
-              ) : null}
-
-              <Button
-                type="submit"
-                loading={form.formState.isSubmitting}
-                className="w-full sm:w-auto"
-              >
-                Save changes
-              </Button>
-            </form>
-          </Card>
-
-          <Card className="space-y-4">
-            <div className="space-y-1">
-              <h2 className="text-lg font-semibold text-[color:var(--foreground)]">
-                Current account
-              </h2>
-              <p className="text-sm text-[color:var(--muted-foreground)]">
-                Current user data loaded from `GET /auth/me`.
-              </p>
+            <div className="grid grid-cols-1 gap-2 py-5 sm:grid-cols-[260px_minmax(0,1fr)] sm:items-center sm:gap-6">
+              <dt className="text-xl text-[color:var(--muted-foreground)]">
+                {copy.fields.login}
+              </dt>
+              <dd className="min-w-0 text-xl font-medium text-[color:var(--foreground)]">
+                {user.login}
+              </dd>
             </div>
 
-            <dl className="space-y-3 text-sm">
-              <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--background)] px-4 py-3">
-                <dt className="text-[color:var(--muted-foreground)]">Email</dt>
-                <dd className="mt-1 font-medium text-[color:var(--foreground)]">
-                  {user.email}
-                </dd>
-              </div>
-
-              <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--background)] px-4 py-3">
-                <dt className="text-[color:var(--muted-foreground)]">Login</dt>
-                <dd className="mt-1 font-medium text-[color:var(--foreground)]">
-                  {user.login}
-                </dd>
-              </div>
-
-              <div className="rounded-2xl border border-[color:var(--border)] bg-[color:var(--background)] px-4 py-3">
-                <dt className="text-[color:var(--muted-foreground)]">Display name</dt>
-                <dd className="mt-1 font-medium text-[color:var(--foreground)]">
-                  {user.displayName}
-                </dd>
-              </div>
-            </dl>
-          </Card>
+            <div className="grid grid-cols-1 gap-2 py-5 sm:grid-cols-[260px_minmax(0,1fr)] sm:items-center sm:gap-6">
+              <dt className="text-xl text-[color:var(--muted-foreground)]">
+                {copy.fields.email}
+              </dt>
+              <dd className="min-w-0 break-all text-xl font-medium text-[color:var(--foreground)]">
+                {user.email}
+              </dd>
+            </div>
+          </dl>
         </div>
-      </Section>
-    </main>
+
+        <div className="border-t border-[color:var(--border)] pb-10 pt-8">
+          <form onSubmit={onSubmit}>
+            <div className="grid grid-cols-1 gap-4 py-2 sm:grid-cols-[260px_minmax(0,1fr)] sm:items-start sm:gap-6">
+              <div className="space-y-1">
+                <h2 className="text-xl font-medium text-[color:var(--foreground)]">
+                  {copy.editTitle}
+                </h2>
+                <p className="text-base leading-6 text-[color:var(--muted-foreground)]">
+                  {copy.editDescription}
+                </p>
+              </div>
+
+              <div className="min-w-0 max-w-xl space-y-4">
+                <FormField>
+                  <Input
+                    id="displayName"
+                    label={copy.displayNameLabel}
+                    error={form.formState.errors.displayName?.message}
+                    className="!text-lg"
+                    {...form.register("displayName")}
+                  />
+                </FormField>
+
+                <FormError message={formError} />
+
+                {successMessage ? (
+                  <p className="text-sm font-medium text-emerald-600">
+                    {successMessage}
+                  </p>
+                ) : null}
+
+                <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center">
+                  <Button
+                    type="submit"
+                    loading={form.formState.isSubmitting}
+                    className="h-11 px-5"
+                  >
+                    {copy.save}
+                  </Button>
+
+                  <LogoutButton
+                    locale={locale}
+                    variant="ghost"
+                    size="sm"
+                    className="h-11 px-5"
+                  >
+                    {dictionary.auth.logout.full}
+                  </LogoutButton>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </DashboardPageLayout>
+    </div>
   );
 }

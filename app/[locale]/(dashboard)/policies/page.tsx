@@ -1,10 +1,11 @@
-import { DashboardPlaceholderPage } from "@/src/page-modules/dashboard-placeholder";
+import { redirect } from "next/navigation";
+import { getLocaleFromParams, withLocalePath } from "@/src/shared/lib/i18n";
 
-export default function PoliciesPage() {
-  return (
-    <DashboardPlaceholderPage
-      title="Политики"
-      description="Зарезервированный модуль для правил соответствия, статуса применения и детального разбора политик."
-    />
-  );
+export default async function PoliciesPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const locale = getLocaleFromParams(await params);
+  redirect(withLocalePath(locale, "/security?tab=policies"));
 }
